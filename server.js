@@ -9,10 +9,7 @@ var express = require('./server/requires.js').express,
 	decode = require('./server/utilities.js').decode,
 	numCPUs = require('./server/requires.js').numCPUs,
 	request = require('./server/requires.js').request,
-	showDb = require('./server/utilities.js').showDb,
-	createToken = require('./server/utilities.js').createToken,
-	passport = require('./server/requires.js').passport,
-	local_strategy = require('./server/requires.js').local_strategy;
+	showDb = require('./server/utilities.js').showDb;
 
 
 var PORT = 80;
@@ -41,84 +38,118 @@ if (cluster.isMaster) {
 	app.use(bodyParser.json());
 	app.use(bodyParser.urlencoded());
 	app.use(cookieParser());
+	app.use(session({
+		cookieName: 'session',
+		secret: 'aliIiIiIiIiIiIi',
+		duration: 30 * 60 * 1000,
+		activeDuration: 5 * 60 * 1000,
+	}));
 	app.use(
 		express.static(path.join(__dirname, '/public'))
 	);
-	app.use(passport.initialize());
 
-	passport.serializeUser(function (user, done) {
-		console.log('serializeeee', user);
-		if (user) {
-			done(null, user.id);
+
+
+	/*
+	#1:Retrieve User Data from the Session
+	app.get('/dashboard', function (req, res) {
+		if (req.session && req.session.user) { // Check if session exists
+			// lookup the user in the DB by pulling their email from the session
+			User.findOne({
+				email: req.session.user.email
+			}, function (err, user) {
+				if (!user) {
+					// if the user isn't found in the DB, reset the session info and
+					// redirect the user to the login page
+					req.session.reset();
+					res.redirect('/login');
+				} else {
+					// expose the user to the template
+					res.locals.user = user;
+
+					// render the dashboard page
+					res.render('dashboard.jade');
+				}
+			});
 		} else {
-			done(null, false, {
-				message: 'wrong email or password'
-			});
+			res.redirect('/login');
 		}
+	});*/
 
-	});
+	/*
+	#2:Session Middleware
 
-	var strategy_opts = {
-		usernameField: 'email'
+	That approach works fine for a few pages,
+	 but you probably don’t want to rewrite the session logic for every single route
+	 in a more substantial app. Instead, make it into a global middleware function.
+	app.use(function (req, res, next) {
+		if (req.session && req.session.user) {
+			User.findOne({
+				email: req.session.user.email
+			}, function (err, user) {
+				if (user) {
+					req.user = user;
+					delete req.user.password; // delete the password from the session it may be wrong
+					delete req.session.password; //The password might be encrypted in the session,
+					 but that’s still no reason to leave it in the cookie. Go ahead and delete it!
+					req.session.user = user; //refresh the session value
+					res.locals.user = user;
+				}
+				// finishing processing the middleware and run the route
+				next();
+			});
+			//find user and next();
+		} else {
+			next();
+		}
+	});*/
+
+
+	/*
+	#3:we still need a middleware function that will check if the user is logged in
+	 and redirect them if not.
+
+	function requireLogin (req, res, next) {
+		if (!req.user) {
+			res.redirect('/login');
+		} else {
+			next();
+		}
 	};
-
-	var login_strategy = new local_strategy(strategy_opts, function (email, password, done) {
-		console.log('----------------------call login passport', email, password);
-		/*
-		in this part we find the user from DB and return the user object with username and id
-		*/
-		showDb("SELECT email , ID FROM users WHERE email = '" + email + "' AND " +
-			"password = '" + password + "' ").then(function (result) {
-			console.log('result is', result);
-			if (result.length === 0) {
-				console.log('not user');
-				return done(null, false, {
-					message: 'wrong email or password'
-				});
-			} else {
-				var user = {
-					"email": result[0].email,
-					"id": +result[0].ID
-				};
-				return done(null, user);
-			}
-		}).fail(function (err) {
-			console.log('errrrrrrrrr is', err);
-			return done(null, false, {
-				message: err
-			});
-		});
-
+	app.get('/dashboard', requireLogin, function(req, res) {
+		res.render('dashboard.jade');
 	});
 
-	var register_strategy = new local_strategy(strategy_opts, function (email, password, done) {
-		console.log('||||||||||||||||||||||call register passport', email, password);
-		var query = "INSERT INTO users (`email`, `password`) VALUES ( '" + email + "' , " +
-			" '" + password + "' )";
-		showDb(query).then(function (res_1) {
-			query = "SELECT email , ID FROM users WHERE email = '" + email + "' AND " +
-				"password = '" + password + "' ";
+	*/
 
-			showDb(query).then(function (res_2) {
-				var user = {
-					"email": res_2[0].email,
-					"id": res_2[0].ID
-				};
-				done(null, user);
 
-			}).fail(function (err_1) {
-				console.log('1', err_1);
-				res.send('Errrrrrrrrrrrr : ', err);
-			});
+	/*
+	#4:There are a few more steps to properly secure the session.
+	The first is simply to make sure your app resets the session when a user logs out.
 
-		}).fail(function (err_2) {
-			console.log('1', err_2);
-			res.send('Errrrrrrrrrrrr : ', err);
-		});
+	app.get('/logout', function(req, res) {
+		req.session.reset();
+		res.redirect('/');
 	});
 
-	passport.use('local-register', register_strategy);
-	passport.use('local-login', login_strategy);
+	*/
+
+	/*
+
+	HTTP/1.1 200 OK
+	Content-Encoding: gzip
+	Content-Language: en-US
+	Content-Type: text/html;charset=UTF-8
+	Date: Tue, 07 Jul 2015 12:18:02 GMT
+	Server: Apache
+	Set-Cookie: rememberMe=deleteMe; Path=/; Max-Age=0; Expires=Mon, 06-Jul-2015 12:18:03 GMT
+	Set-Cookie: tenantNameKey=deleteMe; Path=/; Max-Age=0; Expires=Mon, 06-Jul-2015 12:18:03 GMT; Secure
+	Strict-Transport-Security: max-age=31536000; includeSubDomains; preload
+	Vary: Accept-Encoding
+	Content-Length: 2869
+	Connection: keep-alive
+	*/
+
 
 
 	var registerFunction = require('./server/apps/register.js').register;
@@ -146,24 +177,7 @@ if (cluster.isMaster) {
 	//app.post('/app/register', registerFunction);
 	// app.post('/app/login', login);
 
-	app.post('/app/register', passport.authenticate('local-register'), function (req, res) {
-		var token = createToken(req.user, req);
-		res.send({
-			user: req.user.email,
-			id: req.user.id,
-			token: token
-		});
-	});
-	app.post('/app/login', passport.authenticate('local-login'), function (req, res) {
-		var token = createToken(req.user, req);
-		res.send({
-			user: req.user.email,
-			id: req.user.id,
-			token: token
-		});
-	});
-
-	app.post('/app/google-auth', function (req, res) {
+	/*app.post('/app/google-auth', function (req, res) {
 		var url = 'https://accounts.google.com/o/oauth2/token',
 			api_url = 'https://www.googleapis.com/plus/v1/people/me/openIdConnect',
 			params = {
@@ -249,7 +263,7 @@ if (cluster.isMaster) {
 				}
 			});
 		});
-	});
+	});*/
 
 	app.post('/app/jobs', jobs);
 	app.get('/', global);

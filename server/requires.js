@@ -2,7 +2,6 @@
 	var express = require('express'),
 		env = process.env.NODE_ENV = process.env.NODE_ENV || 'development',
 		app = express(),
-		session = require('express-session'),
 		q = require('q'),
 		request = require('request'),
 		logger = require('morgan'),
@@ -12,13 +11,13 @@
 		cluster = require('cluster'),
 		numCPUs = require('os').cpus().length,
 		util = require('util'),
-		bcrypt = require('bcrypt-nodejs'),
-		crypto = require('crypto'),
+		session = require('client-sessions'),
+		/*bcrypt = require('bcrypt-nodejs'),
+		crypto = require('crypto'),*/
 		Client = require('mariasql'),
-		jwt = require('jwt-simple'),
-		sess,
-		passport = require('passport'),
-		local_strategy = require('passport-local').Strategy,
+	/*jwt = require('jwt-simple'),
+	passport = require('passport'),
+	local_strategy = require('passport-local').Strategy,*/
 		c = new Client();
 
 
