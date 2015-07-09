@@ -3,6 +3,7 @@
 		env = process.env.NODE_ENV = process.env.NODE_ENV || 'development',
 		app = express(),
 		q = require('q'),
+		redis   = require('redis'),
 		request = require('request'),
 		logger = require('morgan'),
 		cookieParser = require('cookie-parser'),
@@ -11,19 +12,19 @@
 		cluster = require('cluster'),
 		numCPUs = require('os').cpus().length,
 		util = require('util'),
-		session = require('client-sessions'),
-		/*bcrypt = require('bcrypt-nodejs'),
-		crypto = require('crypto'),*/
+		session = require('client-sessions'),//1
+		session_2 = require('express-session'),//2
+		redis_store = require('connect-redis')(session_2),
 		Client = require('mariasql'),
-	/*jwt = require('jwt-simple'),
-	passport = require('passport'),
-	local_strategy = require('passport-local').Strategy,*/
 		c = new Client();
 
 
 	exports.app = app;
 	exports.express = express;
-	exports.session = session;
+	exports.session = session;//1
+	exports.session_2 = session_2;//2
+	exports.redis = redis;//2
+	exports.redis_store = redis_store;//2
 	exports.q = q;
 	exports.logger = logger;
 	exports.cookieParser = cookieParser;
@@ -34,11 +35,6 @@
 	exports.numCPUs = numCPUs;
 	exports.util = util;
 	exports.c = c;
-	exports.bcrypt = bcrypt;
-	exports.crypto = crypto;
-	exports.jwt = jwt;
 	exports.request = request;
-	exports.passport = passport;
-	exports.local_strategy = local_strategy;
 
 }());

@@ -9,6 +9,9 @@ var express = require('./server/requires.js').express,
 	decode = require('./server/utilities.js').decode,
 	numCPUs = require('./server/requires.js').numCPUs,
 	request = require('./server/requires.js').request,
+	redis = require('./server/requires.js').redis,
+	redis_store = require('./server/requires.js').redis_store,
+	session_2 = require('./server/requires.js').session_2,
 	showDb = require('./server/utilities.js').showDb;
 
 
@@ -19,6 +22,7 @@ c.connect({
 	password: 'bahbah',
 	db: 'test_01'
 });
+
 
 
 if (cluster.isMaster) {
@@ -38,19 +42,82 @@ if (cluster.isMaster) {
 	app.use(bodyParser.json());
 	app.use(bodyParser.urlencoded());
 	app.use(cookieParser());
-	app.use(session({
+	/*app.use(session({
 		cookieName: 'session',
 		secret: 'aliIiIiIiIiIiIi',
 		duration: 30 * 60 * 1000,
 		activeDuration: 5 * 60 * 1000,
+	}));1*/
+
+	var client = redis.createClient();
+	/*
+	type2
+	app.use(session({
+		secret: 'ssshhhhh',
+		// create new redis store.
+		store: new redis_store({
+			host: 'localhost',
+			port: 6379,
+			client: client,
+			ttl: 260
+		}),
+		saveUninitialized: false,
+		resave: false
 	}));
+
+
+	app.get('/',function(req,res){
+	    // create new session object.
+	    if(req.session.key) {
+	        // if email key is sent redirect.
+	        res.redirect('/admin');
+	    } else {
+	        // else go to home page.
+	        res.render('index.html');
+	    }
+	});
+
+	app.post('/login',function(req,res){
+		// when user login set the key to redis.
+		req.session.key = req.body.email;
+		res.end('done');
+	});
+
+	app.get('/logout',function(req,res){
+	    req.session.destroy(function(err){
+	        if(err){
+	            console.log(err);
+	        } else {
+	            res.redirect('/');
+	        }
+	    });
+	});
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+	*/
 	app.use(
 		express.static(path.join(__dirname, '/public'))
 	);
 
 
 
-	/*
+	/*type1
 	#1:Retrieve User Data from the Session
 	app.get('/dashboard', function (req, res) {
 		if (req.session && req.session.user) { // Check if session exists
@@ -76,7 +143,7 @@ if (cluster.isMaster) {
 		}
 	});*/
 
-	/*
+	/*type1
 	#2:Session Middleware
 
 	That approach works fine for a few pages,
@@ -105,7 +172,7 @@ if (cluster.isMaster) {
 	});*/
 
 
-	/*
+	/*type1
 	#3:we still need a middleware function that will check if the user is logged in
 	 and redirect them if not.
 
@@ -123,7 +190,7 @@ if (cluster.isMaster) {
 	*/
 
 
-	/*
+	/*type1
 	#4:There are a few more steps to properly secure the session.
 	The first is simply to make sure your app resets the session when a user logs out.
 
@@ -135,7 +202,7 @@ if (cluster.isMaster) {
 	*/
 
 	/*
-
+	type1
 	HTTP/1.1 200 OK
 	Content-Encoding: gzip
 	Content-Language: en-US
@@ -158,7 +225,7 @@ if (cluster.isMaster) {
 	var pdfServe = require('./server/apps/pdfServe.js').pdfServe;
 	var jobs = require('./server/apps/jobs.js').jobs;
 
-	/*
+	/*type1
 	destroy session
 	req.session.destroy(function (err) {
 		if (err) {
@@ -169,7 +236,7 @@ if (cluster.isMaster) {
 	});
 
 
-	 */
+	*/
 
 
 
